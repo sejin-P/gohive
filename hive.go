@@ -392,7 +392,7 @@ func (c *Cursor) WaitForCompletion(ctx context.Context) {
 		}
 	}()
 
-	for true {
+	for {
 		operationStatus := c.Poll(true)
 		if c.Err != nil {
 			return
