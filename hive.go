@@ -383,7 +383,7 @@ type Cursor struct {
 	description     [][]string
 
 	// Caller is responsible for managing this channel
-	Logs			chan<- []string
+	Logs chan<- []string
 }
 
 // WaitForCompletion waits for an async operation to finish
@@ -421,7 +421,8 @@ func (c *Cursor) WaitForCompletion(ctx context.Context) {
 					msg = s.ErrorMessage
 				}
 				if msg == nil {
-					*msg = fmt.Sprintf("gohive: operation in state (%v) without task status or error message", operationStatus.OperationState)
+					errormsg := fmt.Sprintf("gohive: operation in state (%v) without task status or error message", operationStatus.OperationState)
+					msg = &errormsg 
 				}
 				c.Err = errors.New(*msg)
 			}
@@ -630,6 +631,9 @@ func (c *Cursor) RowMap(ctx context.Context) map[string]interface{} {
 	}
 
 	d := c.Description()
+	if c.Err != nil || len(d) != len(c.queue) {
+		return nil
+	}
 	m := make(map[string]interface{}, len(c.queue))
 	for i := 0; i < len(c.queue); i++ {
 		columnName := d[i][0]
@@ -676,7 +680,7 @@ func (c *Cursor) RowMap(ctx context.Context) map[string]interface{} {
 			} else {
 				m[columnName] = c.queue[i].DoubleVal.Values[c.columnIndex]
 			}
-		} else if columnType == "STRING_TYPE" {
+		} else if columnType == "STRING_TYPE" || columnType == "VARCHAR_TYPE" || columnType == "CHAR_TYPE" {
 			if isNull(c.queue[i].StringVal.Nulls, c.columnIndex) {
 				m[columnName] = nil
 			} else {
